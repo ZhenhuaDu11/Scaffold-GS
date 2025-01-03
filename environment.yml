@@ -19,5 +19,5 @@ dependencies:
     - wandb
     - lpips
     - laspy
-    - submodules/diff-gaussian-rasterization
-    - submodules/simple-knn
+    # - submodules/diff-gaussian-rasterization
+    # - submodules/simple-knn

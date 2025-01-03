@@ -34,6 +34,7 @@ from gaussian_renderer import GaussianModel
 def render_set(model_path, name, iteration, views, gaussians, pipeline, background):
     render_path = os.path.join(model_path, name, "ours_{}".format(iteration), "renders")
     gts_path = os.path.join(model_path, name, "ours_{}".format(iteration), "gt")
+    error_path = os.path.join(model_path, name, "ours_{}".format(iteration), "errors")
     if not os.path.exists(render_path):
         os.makedirs(render_path)
     if not os.path.exists(gts_path):
@@ -54,13 +55,15 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
 
         rendering = render_pkg["render"]
         gt = view.original_image[0:3, :, :]
+        errors = (rendering - gt).abs()
         name_list.append('{0:05d}'.format(idx) + ".png")
         torchvision.utils.save_image(rendering, os.path.join(render_path, '{0:05d}'.format(idx) + ".png"))
         torchvision.utils.save_image(gt, os.path.join(gts_path, '{0:05d}'.format(idx) + ".png"))
+        torchvision.utils.save_image(errors, os.path.join(error_path, '{0:05d}'.format(idx) + ".png"))
 
     t = np.array(t_list[5:])
     fps = 1.0 / t.mean()
-    print(f'Test FPS: \033[1;35m{fps:.5f}\033[0m')
+    print(f'{name} FPS: \033[1;35m{fps:.5f}\033[0m')
 
     with open(os.path.join(model_path, name, "ours_{}".format(iteration), "per_view_count.json"), 'w') as fp:
             json.dump(per_view_dict, fp, indent=True)      
