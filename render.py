@@ -39,6 +39,8 @@ def render_set(model_path, name, iteration, views, gaussians, pipeline, backgrou
         os.makedirs(render_path)
     if not os.path.exists(gts_path):
         os.makedirs(gts_path)
+    if not os.path.exists(error_path):
+         os.makedirs(error_path)
 
     name_list = []
     per_view_dict = {}
