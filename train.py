@@ -339,7 +339,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
             if tb_writer:
                 tb_writer.add_scalar('Metric/train_fps', train_fps.item(), 0)
             if wandb is not None:
-                wandb.log({"Metric/train_fps":train_fps.item(), }, step = iteration)
+                wandb.log({"Metric/train_fps":train_fps.item(), }, commit=False)
 
         visible_count_test = []
         if not skip_test:
@@ -349,7 +349,7 @@ def render_sets(dataset : ModelParams, iteration : int, pipeline : PipelineParam
             if tb_writer:
                 tb_writer.add_scalar(f'Metric/test_fps', test_fps.item(), 0)
             if wandb is not None:
-                wandb.log({"Metric/test_fps":test_fps, }, step = iteration)
+                wandb.log({"Metric/test_fps":test_fps, }, commit=False)
     
     return visible_count_train, visible_count_test
 
@@ -408,7 +408,7 @@ def evaluate(model_paths, flag_train_test='test', visible_count=None, wandb=None
             wandb.log({f"Metric/{flag_train_test}_SSIMS":torch.stack(ssims).mean().item(), }, commit=False)
             wandb.log({f"Metric/{flag_train_test}_PSNR":torch.stack(psnrs).mean().item(), }, commit=False)
             wandb.log({f"Metric/{flag_train_test}_LPIPS":torch.stack(lpipss).mean().item(), }, commit=False)
-            wandb.log({f"Metric/{flag_train_test}_VISIBLE_NUMS":torch.stack(visible_count).mean().item(), }, commit=False)
+            wandb.log({f"Metric/{flag_train_test}_VISIBLE_NUMS":torch.tensor(visible_count).to(torch.float).mean().item(), }, commit=False)
 
         logger.info(f"model_paths: \033[1;35m{model_paths}\033[0m")
         logger.info("  {:s}_SSIM : \033[1;35m{:>12.7f}\033[0m".format(flag_train_test, torch.tensor(ssims).mean(), ".5"))
@@ -421,8 +421,7 @@ def evaluate(model_paths, flag_train_test='test', visible_count=None, wandb=None
             tb_writer.add_scalar(f'Metric/{flag_train_test}_SSIM', torch.tensor(ssims).mean().item(), 0)
             tb_writer.add_scalar(f'Metric/{flag_train_test}_PSNR', torch.tensor(psnrs).mean().item(), 0)
             tb_writer.add_scalar(f'Metric/{flag_train_test}_LPIPS', torch.tensor(lpipss).mean().item(), 0)
-            
-            tb_writer.add_scalar(f'Metric/{flag_train_test}_VISIBLE_NUMS', torch.tensor(visible_count).mean().item(), 0)
+            tb_writer.add_scalar(f'Metric/{flag_train_test}_VISIBLE_NUMS', torch.tensor(visible_count).to(torch.float).mean().item(), 0)
         
         full_dict[scene_dir][method].update({"SSIM": torch.tensor(ssims).mean().item(),
                                                 "PSNR": torch.tensor(psnrs).mean().item(),
