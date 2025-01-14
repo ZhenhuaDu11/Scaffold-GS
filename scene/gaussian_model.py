@@ -247,7 +247,7 @@ class GaussianModel:
 
         print(f'Initial voxel_size: {self.voxel_size}')
         
-        
+        # 这里的voxel_size决定了初始化的voxel volume有多精确
         points = self.voxelize_sample(points, voxel_size=self.voxel_size)
         fused_point_cloud = torch.tensor(np.asarray(points)).float().cuda()
         offsets = torch.zeros((fused_point_cloud.shape[0], self.n_offsets, 3)).float().cuda()
@@ -256,8 +256,10 @@ class GaussianModel:
         print("Number of points at initialisation : ", fused_point_cloud.shape[0])
 
         dist2 = torch.clamp_min(distCUDA2(fused_point_cloud).float().cuda(), 0.0000001)
+        # scales[:3] is the scale of anchor voxel, scales[3:] is the initial scale of neural gaussian
         scales = torch.log(torch.sqrt(dist2))[...,None].repeat(1, 6)
         
+        #todo 这里的初始化是统一设置为【1，0，0，0]， 即旋转矩阵为单位矩阵。是否根据初始点云的normal进行初始化？
         rots = torch.zeros((fused_point_cloud.shape[0], 4), device="cuda")
         rots[:, 0] = 1
 
@@ -296,7 +298,7 @@ class GaussianModel:
                 {'params': self.mlp_feature_bank.parameters(), 'lr': training_args.mlp_featurebank_lr_init, "name": "mlp_featurebank"},
                 {'params': self.mlp_cov.parameters(), 'lr': training_args.mlp_cov_lr_init, "name": "mlp_cov"},
                 {'params': self.mlp_color.parameters(), 'lr': training_args.mlp_color_lr_init, "name": "mlp_color"},
-                {'params': self.embedding_appearance.parameters(), 'lr': training_args.appearance_lr_init, "name": "embedding_appearance"},
+                # {'params': self.embedding_appearance.parameters(), 'lr': training_args.appearance_lr_init, "name": "embedding_appearance"},
             ]
         elif self.appearance_dim > 0:
             l = [
@@ -507,6 +509,13 @@ class GaussianModel:
 
     # statis grad information to guide liftting. 
     def training_statis(self, viewspace_point_tensor, opacity, update_filter, offset_selection_mask, anchor_visible_mask):
+        '''
+        input:
+            opacity: opacity of 3DGS
+            update_filter: radii>0 of gs
+            offset_selection_mask: opacity>0 of neural gaussian
+            anchor_visible_mask: visible anchor masks
+        '''
         # update opacity stats
         temp_opacity = opacity.clone().view(-1).detach()
         temp_opacity[temp_opacity<0] = 0
